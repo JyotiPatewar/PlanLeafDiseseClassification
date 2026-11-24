@@ -1,469 +1,4 @@
 
-# import os
-# import requests
-# import streamlit as st
-
-# from dotenv import load_dotenv
-# from urllib.parse import urlencode
-# from streamlit_oauth import OAuth2Component
-
-# from firebase_config import FIREBASE_API_KEY, FIREBASE_URL
-
-# load_dotenv()
-
-# GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-# GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-# GOOGLE_REDIRECT_URI = os.getenv(
-#     "GOOGLE_REDIRECT_URI",
-#     "http://localhost:8501"
-# )
-
-# GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-# GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-
-
-# # ---------- Firebase API ----------
-
-# def firebase_request(endpoint, data):
-#     url = f"{FIREBASE_URL}{endpoint}?key={FIREBASE_API_KEY}"
-
-#     response = requests.post(url, json=data, timeout=20)
-#     result = response.json()
-
-#     if response.ok:
-#         return result
-
-#     error = result.get("error", {}).get("message", "Request failed")
-
-#     messages = {
-#         "EMAIL_EXISTS": "This email is already registered.",
-#         "INVALID_LOGIN_CREDENTIALS": "Incorrect email or password.",
-#         "EMAIL_NOT_FOUND": "No account found with this email.",
-#         "INVALID_PASSWORD": "Incorrect password.",
-#         "WEAK_PASSWORD": "Password must contain at least 6 characters.",
-#         "OPERATION_NOT_ALLOWED": "Enable Email/Password in Firebase Authentication.",
-#         "TOO_MANY_ATTEMPTS_TRY_LATER": "Too many attempts. Please try later."
-#     }
-
-#     raise ValueError(messages.get(error, error))
-
-
-# def signup(name, email, password):
-#     # Firebase creates the account; name is saved as displayName.
-#     user = firebase_request(
-#         "signUp",
-#         {
-#             "email": email,
-#             "password": password,
-#             "returnSecureToken": True
-#         }
-#     )
-
-#     try:
-#         firebase_request(
-#             "update",
-#             {
-#                 "idToken": user["idToken"],
-#                 "displayName": name,
-#                 "returnSecureToken": True
-#             }
-#         )
-#     except Exception:
-#         # Account creation has already succeeded.
-#         pass
-
-#     return user
-
-
-# def signin(email, password):
-#     return firebase_request(
-#         "signInWithPassword",
-#         {
-#             "email": email,
-#             "password": password,
-#             "returnSecureToken": True
-#         }
-#     )
-
-
-# def forgot_password(email):
-#     return firebase_request(
-#         "sendOobCode",
-#         {
-#             "requestType": "PASSWORD_RESET",
-#             "email": email
-#         }
-#     )
-
-
-# def google_firebase_login(google_id_token):
-#     post_body = urlencode({
-#         "id_token": google_id_token,
-#         "providerId": "google.com"
-#     })
-
-#     return firebase_request(
-#         "signInWithIdp",
-#         {
-#             "postBody": post_body,
-#             "requestUri": GOOGLE_REDIRECT_URI,
-#             "returnIdpCredential": True,
-#             "returnSecureToken": True
-#         }
-#     )
-
-
-# # ---------- Session ----------
-
-# def save_login(user):
-#     st.session_state.authenticated = True
-#     st.session_state.user_email = user.get("email", "")
-#     st.session_state.firebase_id_token = user.get("idToken", "")
-#     st.session_state.firebase_refresh_token = user.get(
-#         "refreshToken", ""
-#     )
-
-
-# # ---------- Attractive white-green UI ----------
-
-# def add_auth_css():
-#     st.markdown("""
-#     <style>
-#     .stApp {
-#         background: linear-gradient(135deg, #f4fbf4, #ffffff 55%, #e8f6e9);
-#         color: #203b29;
-#     }
-
-#     [data-testid="stHeader"] {
-#         background: transparent;
-#     }
-
-#     .block-container {
-#         padding-top: 2rem;
-#         padding-bottom: 2rem;
-#         max-width: 1050px;
-#     }
-
-#     .brand {
-#         text-align: center;
-#         font-size: 38px;
-#         font-weight: 800;
-#         color: #198754;
-#         margin-bottom: 2px;
-#     }
-
-#     .tagline {
-#         text-align: center;
-#         color: #607968;
-#         font-size: 15px;
-#         margin-bottom: 24px;
-#     }
-
-#     .welcome {
-#         font-size: 27px;
-#         font-weight: 750;
-#         color: #185c35;
-#         margin-bottom: 5px;
-#     }
-
-#     .muted {
-#         color: #6c8171;
-#         font-size: 14px;
-#         margin-bottom: 20px;
-#     }
-
-#     div[data-testid="stForm"] {
-#         background: rgba(255,255,255,0.96);
-#         padding: 22px;
-#         border: 1px solid #dcebdd;
-#         border-radius: 18px;
-#         box-shadow: 0 8px 28px rgba(29, 93, 47, 0.07);
-#     }
-
-#     div.stButton > button,
-#     div[data-testid="stFormSubmitButton"] button {
-#         border-radius: 10px;
-#         min-height: 43px;
-#         font-weight: 650;
-#         border: 1px solid #218838;
-#         transition: 0.2s ease;
-#     }
-
-#     div[data-testid="stFormSubmitButton"] button {
-#         background: #218838;
-#         color: white;
-#     }
-
-#     div[data-testid="stFormSubmitButton"] button:hover {
-#         background: #176b36;
-#         color: white;
-#     }
-
-#     div.stButton > button {
-#         background: white;
-#         color: #218838;
-#     }
-
-#     div.stButton > button:hover {
-#         background: #edf8ef;
-#         color: #176b36;
-#         border-color: #176b36;
-#     }
-
-#     div[data-testid="stTextInput"] input {
-#         border-radius: 9px;
-#     }
-
-#     .footer-note {
-#         text-align: center;
-#         font-size: 12px;
-#         color: #789080;
-#         margin-top: 22px;
-#     }
-
-#     hr {
-#         border-color: #deebdf;
-#     }
-#     </style>
-#     """, unsafe_allow_html=True)
-
-
-# # ---------- Google Login ----------
-
-# def google_login(key="google_login"):
-#     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-#         st.warning("Add Google OAuth credentials in your .env file.")
-#         return
-
-#     oauth = OAuth2Component(
-#         GOOGLE_CLIENT_ID,
-#         GOOGLE_CLIENT_SECRET,
-#         GOOGLE_AUTH_URL,
-#         GOOGLE_TOKEN_URL,
-#         None,
-#         None
-#     )
-
-#     result = oauth.authorize_button(
-#         name="Continue with Google",
-#         icon="https://www.google.com/favicon.ico",
-#         redirect_uri=GOOGLE_REDIRECT_URI,
-#         scope="openid email profile",
-#         key=key,
-#         use_container_width=True
-#     )
-
-#     if not result:
-#         return
-
-#     token_data = result.get("token", {})
-#     google_id_token = token_data.get("id_token")
-
-#     if not google_id_token:
-#         st.error("Google ID token nahi mila. OAuth configuration check karo.")
-#         return
-
-#     try:
-#         user = google_firebase_login(google_id_token)
-#         save_login(user)
-#         st.rerun()
-#     except Exception as error:
-#         st.error(f"Google login failed: {error}")
-
-
-# # ---------- Navigation ----------
-
-# def change_page(page):
-#     st.session_state.auth_page = page
-
-
-# # ---------- Main Authentication UI ----------
-
-# def render_auth():
-#     add_auth_css()
-
-#     if "auth_page" not in st.session_state:
-#         st.session_state.auth_page = "signup"
-
-#     left, center, right = st.columns([1, 1.35, 1])
-
-#     with center:
-#         st.markdown(
-#             '<div class="brand">🍃 LeafCare</div>',
-#             unsafe_allow_html=True
-#         )
-#         st.markdown(
-#             '<div class="tagline">Smart Apple Leaf Disease Classification</div>',
-#             unsafe_allow_html=True
-#         )
-
-#         page = st.session_state.auth_page
-
-#         # ===== SIGN UP =====
-#         if page == "signup":
-#             st.markdown(
-#                 '<div class="welcome">Create your account</div>',
-#                 unsafe_allow_html=True
-#             )
-#             st.markdown(
-#                 '<div class="muted">Join LeafCare to explore apple leaf health.</div>',
-#                 unsafe_allow_html=True
-#             )
-
-#             with st.form("signup_form"):
-#                 name = st.text_input("Full Name", placeholder="Enter your full name")
-#                 email = st.text_input("Email Address", placeholder="you@example.com")
-#                 password = st.text_input(
-#                     "Password", type="password",
-#                     placeholder="Minimum 6 characters"
-#                 )
-#                 confirm = st.text_input(
-#                     "Confirm Password", type="password",
-#                     placeholder="Enter password again"
-#                 )
-
-#                 submitted = st.form_submit_button(
-#                     "Create Account", use_container_width=True
-#                 )
-
-#             if submitted:
-#                 if not name.strip() or not email.strip():
-#                     st.error("Please enter your name and email.")
-#                 elif len(password) < 6:
-#                     st.error("Password must contain at least 6 characters.")
-#                 elif password != confirm:
-#                     st.error("Passwords do not match.")
-#                 else:
-#                     try:
-#                         signup(name.strip(), email.strip(), password)
-#                         st.success("Account created! Please sign in.")
-#                         change_page("signin")
-#                         st.rerun()
-#                     except Exception as error:
-#                         st.error(str(error))
-
-#             st.markdown(
-#                 '<p style="text-align:center;color:#718575;">'
-#                 '──────── Or sign up with ────────</p>',
-#                 unsafe_allow_html=True
-#             )
-
-#             google_login("google_signup")
-
-#             st.divider()
-#             st.markdown(
-#                 "<p style='text-align:center;'>"
-#                 "Already have an account?</p>",
-#                 unsafe_allow_html=True
-#             )
-
-#             if st.button("Sign In", use_container_width=True):
-#                 change_page("signin")
-#                 st.rerun()
-
-#         # ===== SIGN IN =====
-#         elif page == "signin":
-#             st.markdown(
-#                 '<div class="welcome">Welcome back!</div>',
-#                 unsafe_allow_html=True
-#             )
-#             st.markdown(
-#                 '<div class="muted">Sign in to continue to LeafCare.</div>',
-#                 unsafe_allow_html=True
-#             )
-
-#             with st.form("signin_form"):
-#                 email = st.text_input("Email Address", placeholder="you@example.com")
-#                 password = st.text_input(
-#                     "Password", type="password",
-#                     placeholder="Enter your password"
-#                 )
-
-#                 submitted = st.form_submit_button(
-#                     "Sign In", use_container_width=True
-#                 )
-
-#             if submitted:
-#                 if not email.strip() or not password:
-#                     st.error("Enter your email and password.")
-#                 else:
-#                     try:
-#                         user = signin(email.strip(), password)
-#                         save_login(user)
-#                         st.rerun()
-#                     except Exception as error:
-#                         st.error(str(error))
-
-#             if st.button("Forgot Password?", use_container_width=True):
-#                 change_page("forgot")
-#                 st.rerun()
-
-#             st.markdown(
-#                 '<p style="text-align:center;color:#718575;">'
-#                 '──────── Or continue with ────────</p>',
-#                 unsafe_allow_html=True
-#             )
-
-#             google_login("google_signin")
-
-#             st.divider()
-#             st.markdown(
-#                 "<p style='text-align:center;'>"
-#                 "Don't have an account?</p>",
-#                 unsafe_allow_html=True
-#             )
-
-#             if st.button("Create New Account", use_container_width=True):
-#                 change_page("signup")
-#                 st.rerun()
-
-#         # ===== FORGOT PASSWORD =====
-#         elif page == "forgot":
-#             st.markdown(
-#                 '<div class="welcome">Reset password</div>',
-#                 unsafe_allow_html=True
-#             )
-#             st.markdown(
-#                 '<div class="muted">Enter your registered email to request a reset link.</div>',
-#                 unsafe_allow_html=True
-#             )
-
-#             with st.form("forgot_form"):
-#                 email = st.text_input(
-#                     "Registered Email Address",
-#                     placeholder="you@example.com"
-#                 )
-#                 submitted = st.form_submit_button(
-#                     "Send Reset Email", use_container_width=True
-#                 )
-
-#             if submitted:
-#                 if not email.strip():
-#                     st.error("Please enter your email address.")
-#                 else:
-#                     try:
-#                         forgot_password(email.strip())
-#                         st.success(
-#                             "If the account exists, a password reset email "
-#                             "has been requested. Check your inbox."
-#                         )
-#                     except Exception:
-#                         st.error(
-#                             "Could not send reset email. Check your email "
-#                             "and Firebase Authentication settings."
-#                         )
-
-#             if st.button("← Back to Sign In", use_container_width=True):
-#                 change_page("signin")
-#                 st.rerun()
-
-#         st.markdown(
-#             '<div class="footer-note">'
-#             '🍃 LeafCare · Helping you understand apple leaf health'
-#             '</div>',
-#             unsafe_allow_html=True
-#         )
-
 import os
 import requests
 import streamlit as st
@@ -597,9 +132,17 @@ def google_firebase_login(id_token):
     )
 
 
+# def save_login(result):
+#     st.session_state["authenticated"] = True
+#     st.session_state["email"] = result.get("email", "")
+#     st.session_state["idToken"] = result.get("idToken", "")
+#     st.session_state["refreshToken"] = result.get("refreshToken", "")
+#     st.rerun()
+
+
 def save_login(result):
     st.session_state["authenticated"] = True
-    st.session_state["email"] = result.get("email", "")
+    st.session_state["user_email"] = result.get("email", "")
     st.session_state["idToken"] = result.get("idToken", "")
     st.session_state["refreshToken"] = result.get("refreshToken", "")
     st.rerun()
@@ -647,6 +190,68 @@ def add_auth_css():
         }
 
         /* LEFT GREEN PANEL */
+        # .brand-card {
+        #     box-sizing: border-box;
+        #     width: 100%;
+        #     min-height: 510px;
+        #     padding: 34px 30px;
+        #     border-radius: 22px;
+        #     background: linear-gradient(
+        #         145deg,
+        #         #064e3b 0%,
+        #         #087443 55%,
+        #         #16a34a 100%
+        #     );
+        #     color: #ffffff;
+        #     box-shadow: 0 12px 30px rgba(6, 78, 59, 0.18);
+        #     display: flex;
+        #     flex-direction: column;
+        #     justify-content: center;
+        #     white-space: normal;
+        #     overflow-wrap: break-word;
+        #     word-break: normal;
+        # }
+
+        # .brand-card * {
+        #     box-sizing: border-box;
+        #     font-family: sans-serif;
+        #     white-space: normal;
+        #     overflow-wrap: break-word;
+        #     word-break: normal;
+        # }
+
+        # .brand-icon {
+        #     font-size: 32px;
+        #     font-weight: 800;
+        #     line-height: 1.4;
+        #     margin-bottom: 18px;
+        # }
+
+        # .brand-description {
+        #     color: #e4f7e8;
+        #     font-size: 15px;
+        #     line-height: 1.7;
+        #     margin-bottom: 20px;
+        # }
+
+        # .brand-feature {
+        #     color: #ffffff;
+        #     font-size: 14px;
+        #     line-height: 2.3;
+        # }
+
+        # .brand-footer {
+        #     border-top: 1px solid rgba(255,255,255,0.28);
+        #     margin-top: 23px;
+        #     padding-top: 14px;
+        #     color: #dcfce7;
+        #     font-size: 10px;
+        #     font-weight: 700;
+        #     letter-spacing: 1.2px;
+        #     line-height: 1.7;
+        # }
+
+                /* LEFT BRAND PANEL */
         .brand-card {
             box-sizing: border-box;
             width: 100%;
@@ -664,20 +269,11 @@ def add_auth_css():
             display: flex;
             flex-direction: column;
             justify-content: center;
-            white-space: normal;
-            overflow-wrap: break-word;
-            word-break: normal;
-        }
-
-        .brand-card * {
-            box-sizing: border-box;
-            font-family: sans-serif;
-            white-space: normal;
-            overflow-wrap: break-word;
-            word-break: normal;
+            overflow: hidden;
         }
 
         .brand-icon {
+            color: #ffffff;
             font-size: 32px;
             font-weight: 800;
             line-height: 1.4;
@@ -1037,34 +633,97 @@ def render_auth():
     left, right = st.columns([1.05, 0.95], gap="large")
 
     # -------- LEFT BRAND PANEL --------
+    # with left:
+    #     st.markdown(
+    #     """
+    #         <div style="
+    #             background-color: #123524;
+    #             color: white;
+    #             padding: 30px;
+    #             border-radius: 15px;
+    #         ">
+    #             <h2>🍃 LeafCare</h2>
+
+    #             <p>
+    #                 Discover a smarter way to explore apple leaf health
+    #                 with deep learning and image classification.
+    #             </p>
+
+    #             <p>
+    #                 🍎 Four apple leaf categories<br>
+    #                 🧠 Deep learning classification<br>
+    #                 🌱 Symptoms and prevention<br>
+    #                 🔐 Secure account access
+    #             </p>
+
+    #             <p>GROW HEALTHIER. LEARN SMARTER.</p>
+    #         </div>
+    #         """,
+    #         unsafe_allow_html=True,
+    #     )
+
+
+      # -------- LEFT BRAND PANEL --------
     with left:
-        st.markdown(
-        """
+        st.html("""
+        <div style="
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 510px;
+            padding: 35px 30px;
+            border-radius: 22px;
+            background: linear-gradient(145deg, #064e3b, #087443, #16a34a);
+            color: white;
+            box-shadow: 0 12px 30px rgba(6,78,59,0.18);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-family: sans-serif;
+        ">
+
             <div style="
-                background-color: #123524;
-                color: white;
-                padding: 30px;
-                border-radius: 15px;
+                font-size: 32px;
+                font-weight: 800;
+                margin-bottom: 22px;
             ">
-                <h2>🍃 LeafCare</h2>
-
-                <p>
-                    Discover a smarter way to explore apple leaf health
-                    with deep learning and image classification.
-                </p>
-
-                <p>
-                    🍎 Four apple leaf categories<br>
-                    🧠 Deep learning classification<br>
-                    🌱 Symptoms and prevention<br>
-                    🔐 Secure account access
-                </p>
-
-                <p>GROW HEALTHIER. LEARN SMARTER.</p>
+                🍃 LeafCare
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+
+            <div style="
+                font-size: 15px;
+                line-height: 1.8;
+                color: #e4f7e8;
+                margin-bottom: 24px;
+            ">
+                Discover a smarter way to explore apple leaf health
+                with deep learning and image classification.
+            </div>
+
+            <div style="
+                font-size: 14px;
+                line-height: 2.5;
+                color: white;
+            ">
+                🍎 Four apple leaf categories<br>
+                🧠 Deep learning classification<br>
+                🌱 Symptoms and prevention<br>
+                🔐 Secure account access
+            </div>
+
+            <div style="
+                border-top: 1px solid rgba(255,255,255,0.3);
+                margin-top: 25px;
+                padding-top: 16px;
+                font-size: 11px;
+                font-weight: bold;
+                letter-spacing: 1.5px;
+                color: #dcfce7;
+            ">
+                GROW HEALTHIER. LEARN SMARTER.
+            </div>
+
+        </div>
+        """)
     # -------- RIGHT AUTHENTICATION CARD --------
     with right:
         with st.container(border=True):
