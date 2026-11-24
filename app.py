@@ -82,84 +82,58 @@ st.markdown("""
     border-color: #b4d9b8;
 }
 
-/* Logout button */
+/* LOGOUT BUTTON */
 [data-testid="stSidebar"] .stButton button {
-    background: linear-gradient(135deg, #2e7d32, #1b5e20);
+    background: linear-gradient(135deg, #e53935, #b71c1c) !important;
     color: #ffffff !important;
-    border: 1px solid #1b5e20;
-    border-radius: 12px;
-    min-height: 44px;
-    padding: 10px 16px;
-    font-weight: 700;
-    box-shadow: 0 4px 10px rgba(27, 94, 32, 0.18);
+    border: 1px solid #b71c1c !important;
+    border-radius: 12px !important;
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 10px rgba(183, 28, 28, 0.18);
     transition: all 0.2s ease;
 }
 
+/* LOGOUT TEXT */
 [data-testid="stSidebar"] .stButton button p,
 [data-testid="stSidebar"] .stButton button span {
     color: #ffffff !important;
 }
 
+/* LOGOUT HOVER */
 [data-testid="stSidebar"] .stButton button:hover {
-    background: #145218;
-    color: #ffffff !important;
-    border-color: #145218;
+    background: linear-gradient(135deg, #c62828, #8e0000) !important;
+    border-color: #8e0000 !important;
+    color: white !important;
     transform: translateY(-1px);
 }
-
-/* Dashboard hero */
-.hero {
-    background: linear-gradient(120deg, #d9f3df, #ffffff);
-    border: 1px solid #cce7d1;
-    border-radius: 18px;
-    padding: 28px;
-    margin-bottom: 24px;
 }
 
-.hero h1 {
-    color: #14532d;
-    margin-bottom: 12px;
+/* PREDICT DISEASE BUTTON */
+.stMain div[data-testid="stButton"] {
+    display: flex;
+    justify-content: center;
 }
 
-.hero p {
-    color: #365b43;
-    font-size: 16px;
-    line-height: 1.8;
+.stMain button[data-testid="stBaseButton-primary"] {
+    width: 220px !important;
+    background: #15803d !important;
+    color: white !important;
+    border: 1px solid #15803d !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    min-height: 44px !important;
+    box-shadow: 0 4px 10px rgba(21, 128, 61, 0.18);
+    transition: all 0.2s ease;
 }
 
-/* Information cards */
-.info-card {
-    background: #ffffff;
-    border: 1px solid #dcebdc;
-    border-radius: 14px;
-    padding: 18px;
-    min-height: 145px;
-    box-shadow: 0 3px 12px rgba(20, 83, 45, 0.05);
+.stMain button[data-testid="stBaseButton-primary"]:hover {
+    background: #166534 !important;
+    color: white !important;
+    border: 1px solid #166534 !important;
+    transform: translateY(-1px);
 }
-
-.info-card h3 {
-    color: #176438;
-}
-
-/* Metrics */
-[data-testid="stMetric"] {
-    background: #ffffff;
-    padding: 15px;
-    border: 1px solid #dcebdc;
-    border-radius: 12px;
-}
-
-/* Image corners */
-[data-testid="stImage"] img {
-    border-radius: 12px;
-}
-
-/* Main buttons */
-.stMain .stButton button {
-    border-radius: 10px;
-    font-weight: 600;
-}
-
 /* Mobile compatibility */
 @media (max-width: 768px) {
     .hero {
@@ -297,8 +271,10 @@ with st.sidebar:
     st.caption("Apple Leaf Disease Classification")
     st.divider()
 
-    st.write("Signed Email")
-    st.caption(st.session_state.get("user_email", ""))
+    st.markdown(
+    f"<div style='color: #333333;'><b>Signed Email :</b> {st.session_state.get('user_email', '')}</div>",
+    unsafe_allow_html=True
+)
 
     if "navigation" not in st.session_state:
         st.session_state.navigation = "Dashboard"
@@ -605,10 +581,7 @@ elif page == "Disease Detection":
                 width=400
             )
 
-            if st.button(
-                "Predict Disease",
-                use_container_width=True
-            ):
+            if st.button("Predict Disease", type="primary"):
                 try:
                     model, class_names = load_model()
 
